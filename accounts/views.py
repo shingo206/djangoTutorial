@@ -1,7 +1,9 @@
 from django.shortcuts import render
-from django.views.generic import ListView, DetailView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from django.views.generic import ListView, DetailView, UpdateView, DeleteView, CreateView
 
-from accounts.models import Product, Order, Customer
+from .models import Product, Order, Customer
+from .forms import OrderForm
 
 
 def home(request):
@@ -24,9 +26,34 @@ class CustomerDetail(DetailView):
     model = Customer
 
 
+class CustomerCreate(CreateView):
+    model = Customer
+    success_url = reverse_lazy('accounts:home')
+
+
 class CustomerUpdate(UpdateView):
     model = Customer
+    success_url = reverse_lazy('accounts:home')
 
 
 class CustomerDelete(DeleteView):
     model = Customer
+    success_url = reverse_lazy('accounts:home')
+
+
+class OrderCreate(CreateView):
+    model = Order
+    form_class = OrderForm
+    success_url = reverse_lazy('accounts:home')
+
+
+class OrderUpdate(UpdateView):
+    model = Order
+    form_class = OrderForm
+    success_url = reverse_lazy('accounts:home')
+
+
+class OrderDelete(DeleteView):
+    model = Order
+    form_class = OrderForm
+    success_url = reverse_lazy('accounts:home')
