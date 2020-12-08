@@ -175,6 +175,7 @@ class OrderList(LoginRequiredMixin, ListView):
 
 class CustomerDetail(LoginRequiredMixin, SingleObjectMixin, ListView):
     model = Customer
+    queryset = Customer.objects.all()
     paginate_by = 5
     login_url = 'accounts:login'
 
@@ -183,7 +184,7 @@ class CustomerDetail(LoginRequiredMixin, SingleObjectMixin, ListView):
         self.object = None
 
     def get(self, request, *args, **kwargs):
-        self.object = self.get_object(queryset=self.model.objects.all())
+        self.object = self.get_object(queryset=self.queryset)
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self):
