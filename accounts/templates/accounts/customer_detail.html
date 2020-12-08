@@ -23,7 +23,7 @@
         </div>
         <div class="col-md">
             <div class="card card-body">
-                <h5>Total Orders: {{ customer.order_set.count }}</h5>
+                <h5>Total Orders: {{ customer.count }}</h5>
                 <hr>
                 <h1 style="text-align: center;padding: 10px"></h1>
             </div>
@@ -53,7 +53,7 @@
                         <th>Update</th>
                         <th>Remove</th>
                     </tr>
-                    {% for order in customer.order_set.all %}
+                    {% for order in object_list %}
                         <tr>
                             <td>{{ order.product }}</td>
                             <td>{{ order.product.category }}</td>
@@ -67,7 +67,28 @@
                         </tr>
                     {% endfor %}
                 </table>
+                <hr>
+                <div class="paginator">
+                    <span class="step-links">
+                        {% if page_obj.has_previous %}
+                            <a class="btn btn-sm btn-secondary"
+                               href="?page=1">&laquo; first</a>
+                            <a class="btn btn-sm btn-light"
+                               href="?page={{ page_obj.previous_page_number }}">previous</a>
+                        {% endif %}
+                    </span>
+                    <span class="current">
+                        Page {{ page_obj.number }} of {{ paginator.num_pages }}.
+                    </span>
+                    {% if page_obj.has_next %}
+                        <a class="btn btn-sm btn-light"
+                           href="?page={{ page_obj.next_page_number }}">next</a>
+                        <a class="btn btn-sm btn-secondary"
+                           href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
+
 {% endblock %}
