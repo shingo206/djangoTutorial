@@ -9,7 +9,7 @@
             <h5>Customers: {{ total_customers }}</h5>
             <hr>
             <div class="card card-body">
-                <a class="btn btn-primary btn-sm btn-block" href="">Create customer</a>
+                <a class="btn btn-primary btn-sm btn-block" href="{% url 'accounts:customer_create' %}">Create customer</a>
                 <table class="table table-sm">
                     <tr>
                         <th></th>

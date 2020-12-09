@@ -74,7 +74,7 @@ class ProductList(LoginRequiredMixin, ListView):
     model = Product
     paginate_by = 5
     login_url = 'accounts:login'
-    queryset = Product.objects.order_by('-date_created')
+    queryset = model.objects.order_by('-date_created')
 
     @method_decorator(allowed_users(allowed_roles=['admin']))
     def dispatch(self, request, *args, **kwargs):
@@ -83,12 +83,12 @@ class ProductList(LoginRequiredMixin, ListView):
 
 class CustomerCreate(LoginRequiredMixin, CreateView):
     model = Customer
+    form_class = CustomerForm
     login_url = 'accounts:login'
     success_url = reverse_lazy('accounts:home')
 
-    @allowed_users(allowed_roles=['admin'])
     def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
 
 class CustomerUpdate(LoginRequiredMixin, UpdateView):
@@ -130,7 +130,6 @@ class OrderCreate(LoginRequiredMixin, CreateView):
     model = Order
     form_class = OrderForm
     login_url = 'accounts:login'
-    success_url = reverse_lazy('accounts:home')
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -149,33 +148,36 @@ class OrderCreate(LoginRequiredMixin, CreateView):
         formset = OrderFormSet(request.POST, instance=self.customer)
         if formset.is_valid():
             formset.save()
-            return redirect('accounts:orders', **kwargs)
+            return redirect('accounts:orders', pk=self.kwargs.get('pk'))
 
 
-class OrderList(LoginRequiredMixin, ListView):
-    model = Order
-    paginate_by = 5
-    login_url = 'accounts:login'
-
-    def __init__(self):
-        super(OrderList, self).__init__()
-        self.customer = None
-
-    def get_queryset(self):
-        self.customer = Customer.objects.get(id=self.kwargs.get('pk'))
-        return OrderFilter(self.request.GET,
-                           queryset=Order.objects.filter(customer=self.customer).order_by('-date_created')).qs
-
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['customer'] = self.customer
-        context['order_filter'] = OrderFilter(self.request.GET)
-        return context
+#
+#
+# class OrderList(LoginRequiredMixin, ListView):
+#     model = Order
+#     paginate_by = 5
+#     ordering = ['-date_created']
+#     login_url = 'accounts:login'
+#
+#     def __init__(self):
+#         super(OrderList, self).__init__()
+#         self.customer = None
+#
+#     def get_queryset(self):
+#         self.customer = Customer.objects.get(id=self.kwargs.get('pk'))
+#         return OrderFilter(self.request.GET,
+#                            queryset=self.model.objects.filter(customer=self.customer)).qs
+#
+#     def get_context_data(self, *, object_list=None, **kwargs):
+#         context = super().get_context_data(**kwargs)
+#         context['customer'] = self.customer
+#         context['order_filter'] = OrderFilter(self.request.GET)
+#         return context
 
 
 class CustomerDetail(LoginRequiredMixin, SingleObjectMixin, ListView):
     model = Customer
-    queryset = Customer.objects.all()
+    queryset = model.objects.all()
     paginate_by = 5
     login_url = 'accounts:login'
 
@@ -183,17 +185,13 @@ class CustomerDetail(LoginRequiredMixin, SingleObjectMixin, ListView):
         super(CustomerDetail, self).__init__()
         self.object = None
 
-    def get(self, request, *args, **kwargs):
-        self.object = self.get_object(queryset=self.queryset)
-        return super().get(request, *args, **kwargs)
-
     def get_queryset(self):
+        self.object = self.get_object(queryset=self.queryset)
         return OrderFilter(self.request.GET,
                            queryset=self.object.order_set.order_by('-date_created')).qs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['customer'] = self.object
         context['order_filter'] = OrderFilter(self.request.GET)
         return context
 

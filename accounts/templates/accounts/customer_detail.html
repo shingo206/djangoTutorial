@@ -5,25 +5,25 @@
     <div class="row">
         <div class="col-md">
             <div class="card card-body">
-                <h5>Customer: {{ customer.name }}</h5>
+                <h5>Customer: {{ object.name }}</h5>
                 <hr>
                 <a class="btn btn-outline-info btn-sm btn-block"
-                   href="{% url 'accounts:customer_update' customer.id %}">Update Customer</a>
+                   href="{% url 'accounts:customer_update' object.id %}">Update Customer</a>
                 <a class="btn btn-outline-info btn-sm btn-block"
-                   href="{% url 'accounts:order_create' customer.id %}">Place Order</a>
+                   href="{% url 'accounts:order_create' object.id %}">Place Order</a>
             </div>
         </div>
         <div class="col-md">
             <div class="card card-body">
                 <h5>Contact information</h5>
                 <hr>
-                <p>Email: {{ customer.email }}</p>
-                <p>Phone: {{ customer.phone }}</p>
+                <p>Email: {{ object.email }}</p>
+                <p>Phone: {{ object.phone }}</p>
             </div>
         </div>
         <div class="col-md">
             <div class="card card-body">
-                <h5>Total Orders: {{ customer.count }}</h5>
+                <h5>Total Orders: {{ object.count }}</h5>
                 <hr>
                 <h1 style="text-align: center;padding: 10px"></h1>
             </div>
