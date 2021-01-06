@@ -1,15 +1,15 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import User
-from django.shortcuts import render, redirect
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.models import User, Group
+from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views.generic import ListView, UpdateView, DeleteView, CreateView
 from django.views.generic.detail import SingleObjectMixin
 
-from .decorators import unauthenticated_user, allowed_users
+from .decorators import *
 from .filters import OrderFilter
 from .forms import OrderForm, OrderFormSet, CreateUserForm, CustomerForm
 from .models import Product, Order, Customer
@@ -34,6 +34,7 @@ def logout_user(request):
     return redirect('accounts:login')
 
 
+@method_decorator(unauthenticated_user, name='dispatch')
 class Register(CreateView):
     model = User
     template_name = 'accounts/user_form.html'
@@ -47,13 +48,16 @@ class Register(CreateView):
             return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        user = form.cleaned_data.get('username')
-        messages.success(self.request, 'Account was created for ' + user)
+        user = form.save()
+        username = form.cleaned_data.get('username')
+        group = Group.objects.get(name='customer')
+        user.groups.add(group)
+        messages.success(self.request, 'Account was created for ' + username)
         return super().form_valid(form)
 
 
 @login_required(login_url='accounts:login')
-@allowed_users(allowed_roles=['admin', 'customer'])
+@admin_only
 def home(request):
     orders = Order.objects.order_by('-date_created')
     total_orders = orders.count()
@@ -70,44 +74,32 @@ def home(request):
     return render(request, 'accounts/dashboard.html', context)
 
 
-class ProductList(LoginRequiredMixin, ListView):
+class ProductList(LoginRequiredMixin, PermissionRequiredMixin, ListView):
     model = Product
     paginate_by = 5
-    login_url = 'accounts:login'
+    permission_required = 'product.list_all_products'
     queryset = model.objects.order_by('-date_created')
 
-    @method_decorator(allowed_users(allowed_roles=['admin']))
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(*args, **kwargs)
 
-
-class CustomerCreate(LoginRequiredMixin, CreateView):
+class CustomerCreate(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Customer
     form_class = CustomerForm
-    login_url = 'accounts:login'
+    permission_required = 'customer.create'
     success_url = reverse_lazy('accounts:home')
 
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
-
-class CustomerUpdate(LoginRequiredMixin, UpdateView):
+@method_decorator(admin_only, name='dispatch')
+class CustomerUpdate(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Customer
     form_class = CustomerForm
-    login_url = 'accounts:login'
+    permission_required = 'customer.update'
     success_url = reverse_lazy('accounts:home')
 
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
-
-class CustomerDelete(LoginRequiredMixin, DeleteView):
+class CustomerDelete(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Customer
-    login_url = 'accounts:login'
+    permission_required = 'customer.delete'
     success_url = reverse_lazy('accounts:home')
-
-    def dispatch(self, request, *args, **kwargs):
-        return super().dispatch(request, *args, **kwargs)
 
 
 #
@@ -148,7 +140,10 @@ class OrderCreate(LoginRequiredMixin, CreateView):
         formset = OrderFormSet(request.POST, instance=self.customer)
         if formset.is_valid():
             formset.save()
-            return redirect('accounts:orders', pk=self.kwargs.get('pk'))
+            return self.form_valid(formset)
+
+    def get_success_url(self):
+        return reverse_lazy('accounts:orders', kwargs={'pk': self.customer.id})
 
 
 #
@@ -175,7 +170,7 @@ class OrderCreate(LoginRequiredMixin, CreateView):
 #         return context
 
 
-class CustomerDetail(LoginRequiredMixin, SingleObjectMixin, ListView):
+class CustomerDetail(LoginRequiredMixin, PermissionRequiredMixin, SingleObjectMixin, ListView):
     model = Customer
     queryset = model.objects.all()
     paginate_by = 5

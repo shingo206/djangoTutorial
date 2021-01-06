@@ -1,7 +1,9 @@
+from django.contrib.auth import get_user_model
 from django.db import models
 
 
 class Customer(models.Model):
+    user = models.OneToOneField(get_user_model(), null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=100, null=True)
     phone = models.CharField(max_length=50, null=True)
     email = models.EmailField(max_length=100, null=True)
@@ -9,6 +11,13 @@ class Customer(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        permissions = [
+            ('create', 'allow to create new customer'),
+            ('update', 'allow to update new customer'),
+            ('delete', 'allow to delete new customer'),
+        ]
 
 
 class Tag(models.Model):
@@ -32,6 +41,11 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        permissions = [
+            ('list_all_products', 'allow to view all product list'),
+        ]
 
 
 class Order(models.Model):
