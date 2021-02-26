@@ -12,13 +12,6 @@ class Customer(models.Model):
     def __str__(self):
         return self.name
 
-    class Meta:
-        permissions = [
-            ('create', 'allow to create new customer'),
-            ('update', 'allow to update new customer'),
-            ('delete', 'allow to delete new customer'),
-        ]
-
 
 class Tag(models.Model):
     name = models.CharField(max_length=100, null=True)

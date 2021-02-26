@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User, Group
 from django.shortcuts import render
 from django.urls import reverse_lazy
@@ -25,7 +25,7 @@ def login_page(request):
             login(request, user)
             return redirect('accounts:home')
         else:
-            messages.info(request, 'Username or Password is not correct')
+            messages.error(request, 'Username or Password is not correct')
     return render(request, 'accounts/login.html', context={})
 
 
@@ -56,8 +56,7 @@ class Register(CreateView):
         return super().form_valid(form)
 
 
-@login_required(login_url='accounts:login')
-@admin_only
+@login_required()
 def home(request):
     orders = Order.objects.order_by('-date_created')
     total_orders = orders.count()
@@ -74,54 +73,32 @@ def home(request):
     return render(request, 'accounts/dashboard.html', context)
 
 
-class ProductList(LoginRequiredMixin, PermissionRequiredMixin, ListView):
+class ProductList(LoginRequiredMixin, ListView):
     model = Product
     paginate_by = 5
-    permission_required = 'product.list_all_products'
     queryset = model.objects.order_by('-date_created')
 
 
-class CustomerCreate(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+class CustomerCreate(LoginRequiredMixin, CreateView):
     model = Customer
     form_class = CustomerForm
-    permission_required = 'customer.create'
     success_url = reverse_lazy('accounts:home')
 
 
-@method_decorator(admin_only, name='dispatch')
-class CustomerUpdate(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+class CustomerUpdate(LoginRequiredMixin, UpdateView):
     model = Customer
     form_class = CustomerForm
-    permission_required = 'customer.update'
     success_url = reverse_lazy('accounts:home')
 
 
-class CustomerDelete(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class CustomerDelete(LoginRequiredMixin, DeleteView):
     model = Customer
-    permission_required = 'customer.delete'
     success_url = reverse_lazy('accounts:home')
-
-
-#
-#
-# @login_required(login_url='accounts:login')
-# @allowed_users(allowed_roles=['admin', 'customer'])
-# def order_create(request, pk):
-#     customer = Customer.objects.get(id=pk)
-#     formset = OrderFormSet(instance=customer)
-#     if request.method == 'POST':
-#         formset = OrderFormSet(request.POST, instance=customer)
-#         if formset.is_valid():
-#             formset.save()
-#             return redirect('/')
-#     context = {'formset': formset}
-#     return render(request, 'accounts/order_form.html', context)
 
 
 class OrderCreate(LoginRequiredMixin, CreateView):
     model = Order
     form_class = OrderForm
-    login_url = 'accounts:login'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -146,35 +123,10 @@ class OrderCreate(LoginRequiredMixin, CreateView):
         return reverse_lazy('accounts:orders', kwargs={'pk': self.customer.id})
 
 
-#
-#
-# class OrderList(LoginRequiredMixin, ListView):
-#     model = Order
-#     paginate_by = 5
-#     ordering = ['-date_created']
-#     login_url = 'accounts:login'
-#
-#     def __init__(self):
-#         super(OrderList, self).__init__()
-#         self.customer = None
-#
-#     def get_queryset(self):
-#         self.customer = Customer.objects.get(id=self.kwargs.get('pk'))
-#         return OrderFilter(self.request.GET,
-#                            queryset=self.model.objects.filter(customer=self.customer)).qs
-#
-#     def get_context_data(self, *, object_list=None, **kwargs):
-#         context = super().get_context_data(**kwargs)
-#         context['customer'] = self.customer
-#         context['order_filter'] = OrderFilter(self.request.GET)
-#         return context
-
-
-class CustomerDetail(LoginRequiredMixin, PermissionRequiredMixin, SingleObjectMixin, ListView):
+class CustomerDetail(LoginRequiredMixin, SingleObjectMixin, ListView):
     model = Customer
     queryset = model.objects.all()
     paginate_by = 5
-    login_url = 'accounts:login'
 
     def __init__(self):
         super(CustomerDetail, self).__init__()
@@ -194,12 +146,10 @@ class CustomerDetail(LoginRequiredMixin, PermissionRequiredMixin, SingleObjectMi
 class OrderUpdate(LoginRequiredMixin, UpdateView):
     model = Order
     form_class = OrderForm
-    login_url = 'accounts:login'
     success_url = reverse_lazy('accounts:home')
 
 
 class OrderDelete(LoginRequiredMixin, DeleteView):
     model = Order
     form_class = OrderForm
-    login_url = 'accounts:login'
     success_url = reverse_lazy('accounts:home')
